@@ -142,7 +142,9 @@ def send_line_message(text: str):
         print(f"LINE 推播結果：{resp.status_code} {resp.text}")
         time.sleep(1)
 
-
+print("LINE_TOKEN:", os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "沒有讀到")[:10] + "...")
+print("LINE_USER_ID:", os.environ.get("LINE_USER_ID", "沒有讀到"))
+print("GEMINI_KEY:", os.environ.get("GEMINI_API_KEY", "沒有讀到")[:10] + "...")
 # ── 主程式 ────────────────────────────────────────
 def main():
     print("【Step 1】收集 Google 搜尋資料...")
