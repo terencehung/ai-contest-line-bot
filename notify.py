@@ -4,11 +4,17 @@ from google import genai
 from datetime import date
 import time
 
-# ── 設定 ──────────────────────────────────────────
+
 LINE_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 
+print(f"=== 環境變數診斷 ===")
+print(f"LINE_TOKEN 長度: {len(LINE_TOKEN)}")
+print(f"LINE_TOKEN 前10碼: '{LINE_TOKEN[:10]}'")
+print(f"LINE_USER_ID: '{LINE_USER_ID}'")
+print(f"GEMINI_KEY 長度: {len(GEMINI_KEY)}")
+print(f"===================")
 # 啟動時印出確認（只印前10碼，不洩漏完整token）
 print(f"LINE_TOKEN 前10碼: {LINE_TOKEN[:10] if LINE_TOKEN else '❌ 空的'}")
 print(f"LINE_USER_ID: {LINE_USER_ID if LINE_USER_ID else '❌ 空的'}")
