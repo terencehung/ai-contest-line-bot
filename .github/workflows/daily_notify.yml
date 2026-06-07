@@ -2,8 +2,8 @@ name: Daily AI Contest LINE Notify
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # 台灣時間每天早上 09:00（UTC 01:00）
-  workflow_dispatch:        # 可手動觸發測試
+    - cron: '0 1 * * *'
+  workflow_dispatch:
 
 jobs:
   notify:
@@ -23,7 +23,7 @@ jobs:
 
       - name: Run notify
         env:
-	    	LINE_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
-        LINE_USER_ID = os.environ["LINE_USER_ID"]
-        GEMINI_KEY = os.environ["GEMINI_API_KEY"]
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python notify.py
