@@ -1,13 +1,18 @@
 import os
 import requests
-import google.generativeai as genai
+from google import genai
 from datetime import date
 import time
 
 # ── 設定 ──────────────────────────────────────────
-LINE_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
-LINE_USER_ID = os.environ["LINE_USER_ID"]
-GEMINI_KEY = os.environ["GEMINI_API_KEY"]
+LINE_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+# 啟動時印出確認（只印前10碼，不洩漏完整token）
+print(f"LINE_TOKEN 前10碼: {LINE_TOKEN[:10] if LINE_TOKEN else '❌ 空的'}")
+print(f"LINE_USER_ID: {LINE_USER_ID if LINE_USER_ID else '❌ 空的'}")
+print(f"GEMINI_KEY 前10碼: {GEMINI_KEY[:10] if GEMINI_KEY else '❌ 空的'}")
 
 SEARCH_QUERIES = [
     "台灣 AI 競賽 獎金   報名",
@@ -85,9 +90,8 @@ def collect_search_data() -> str:
 
 # ── Gemini 整理摘要（免費）────────────────────────
 def summarize_with_gemini(raw_data: str) -> str:
-    genai.configure(api_key=GEMINI_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")  # 免費版
-
+    client = genai.Client(api_key=GEMINI_KEY)
+    
     today = date.today().strftime("%Y年%m月%d日")
     prompt = f"""今天是 {today}。
 
@@ -142,9 +146,6 @@ def send_line_message(text: str):
         print(f"LINE 推播結果：{resp.status_code} {resp.text}")
         time.sleep(1)
 
-print("LINE_TOKEN:", os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "沒有讀到")[:10] + "...")
-print("LINE_USER_ID:", os.environ.get("LINE_USER_ID", "沒有讀到"))
-print("GEMINI_KEY:", os.environ.get("GEMINI_API_KEY", "沒有讀到")[:10] + "...")
 # ── 主程式 ────────────────────────────────────────
 def main():
     print("【Step 1】收集 Google 搜尋資料...")
