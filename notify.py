@@ -4,32 +4,25 @@ from google import genai
 from datetime import date
 import time
 
-
+# ── 環境變數 ──────────────────────────────────────
 LINE_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 
-print(f"=== 環境變數診斷 ===")
 print(f"LINE_TOKEN 長度: {len(LINE_TOKEN)}")
-print(f"LINE_TOKEN 前10碼: '{LINE_TOKEN[:10]}'")
 print(f"LINE_USER_ID: '{LINE_USER_ID}'")
 print(f"GEMINI_KEY 長度: {len(GEMINI_KEY)}")
-print(f"===================")
-# 啟動時印出確認（只印前10碼，不洩漏完整token）
-print(f"LINE_TOKEN 前10碼: {LINE_TOKEN[:10] if LINE_TOKEN else '❌ 空的'}")
-print(f"LINE_USER_ID: {LINE_USER_ID if LINE_USER_ID else '❌ 空的'}")
-print(f"GEMINI_KEY 前10碼: {GEMINI_KEY[:10] if GEMINI_KEY else '❌ 空的'}")
 
+# ── 搜尋關鍵字 ────────────────────────────────────
 SEARCH_QUERIES = [
-    "台灣 AI 競賽 獎金   報名",
-    "台灣 新創 競賽 獎金  ",
-    "AI Hackathon Taiwan 獎金  ",
-    "科技創新 AI競賽 台灣 獎金 報名中",
+    "台灣 AI 競賽 獎金 報名",
+    "台灣 新創 競賽 獎金",
+    "AI 獎金  ",
+    "科技創新 AI競賽 台灣 獎金 報名",
 ]
 
-# ── Google 搜尋（免費，不需 API Key）─────────────
+# ── Google 搜尋 ───────────────────────────────────
 def google_search(query: str) -> str:
-    """用 requests 模擬 Google 搜尋，取得摘要文字"""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -39,8 +32,7 @@ def google_search(query: str) -> str:
     }
     url = f"https://www.google.com/search?q={requests.utils.quote(query)}&num=8&hl=zh-TW"
     resp = requests.get(url, headers=headers, timeout=10)
-    
-    # 簡單擷取搜尋結果中的文字（title + snippet）
+
     from html.parser import HTMLParser
 
     class SnippetParser(HTMLParser):
@@ -76,11 +68,10 @@ def google_search(query: str) -> str:
 
     parser = SnippetParser()
     parser.feed(resp.text)
-    return "\n".join(parser.results[:20])  # 最多取 20 條
+    return "\n".join(parser.results[:20])
 
 
 def collect_search_data() -> str:
-    """執行多個搜尋查詢，彙整原始資料"""
     all_data = []
     for query in SEARCH_QUERIES:
         print(f"搜尋中：{query}")
@@ -90,14 +81,14 @@ def collect_search_data() -> str:
                 all_data.append(f"=== 搜尋：{query} ===\n{result}")
         except Exception as e:
             print(f"搜尋失敗：{e}")
-        time.sleep(2)  # 避免被 Google 擋
+        time.sleep(2)
     return "\n\n".join(all_data)
 
 
-# ── Gemini 整理摘要（免費）────────────────────────
+# ── Gemini 整理摘要 ───────────────────────────────
 def summarize_with_gemini(raw_data: str) -> str:
     client = genai.Client(api_key=GEMINI_KEY)
-    
+
     today = date.today().strftime("%Y年%m月%d日")
     prompt = f"""今天是 {today}。
 
@@ -120,11 +111,14 @@ def summarize_with_gemini(raw_data: str) -> str:
 
 最後附上：📌 資料來源時間：{today}"""
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=prompt
+    )
     return response.text
 
 
-# ── LINE Messaging API 推播 ────────────────────────
+# ── LINE 推播 ─────────────────────────────────────
 def send_line_message(text: str):
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
@@ -132,7 +126,6 @@ def send_line_message(text: str):
         "Authorization": f"Bearer {LINE_TOKEN}",
     }
 
-    # LINE 單則訊息上限 5000 字，超過切分
     max_len = 4800
     chunks = [text[i:i+max_len] for i in range(0, len(text), max_len)]
 
@@ -140,7 +133,7 @@ def send_line_message(text: str):
         header = f"📢 AI競賽日報 {date.today()}"
         if len(chunks) > 1:
             header += f"（{i+1}/{len(chunks)}）"
-        
+
         payload = {
             "to": LINE_USER_ID,
             "messages": [{
@@ -152,13 +145,14 @@ def send_line_message(text: str):
         print(f"LINE 推播結果：{resp.status_code} {resp.text}")
         time.sleep(1)
 
+
 # ── 主程式 ────────────────────────────────────────
 def main():
     print("【Step 1】收集 Google 搜尋資料...")
     raw = collect_search_data()
 
     if not raw.strip():
-        send_line_message("⚠️ 今日 AI 競賽搜尋未取得任何資料，請手動確認。\n建議查詢：https://www.nchc.org.tw 或 https://tbrain.trendmicro.com")
+        send_line_message("⚠️ 今日搜尋未取得資料，建議手動查詢：\nhttps://tbrain.trendmicro.com\nhttps://www.nchc.org.tw")
         return
 
     print("【Step 2】Gemini 整理摘要...")
