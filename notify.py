@@ -152,7 +152,7 @@ def main():
     raw = collect_search_data()
 
     if not raw.strip():
-        send_line_message("⚠️ 今日搜尋未取得資料，建議手動查詢：\nhttps://tbrain.trendmicro.com\nhttps://www.nchc.org.tw")
+        send_line_message("⚠️ 快點來約會")
         return
 
     print("【Step 2】Gemini 整理摘要...")
